@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Recipe</string>
+
+    <string name="content_picture">picture</string>
+    <string name="idlabel">id</string>
+    <string name="search">search for recipe</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+</resources>
