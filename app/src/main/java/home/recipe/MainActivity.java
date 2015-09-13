@@ -2,6 +2,7 @@ package home.recipe;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -32,6 +33,7 @@ public class MainActivity extends Activity implements DownloadResultReceiver.Rec
     private Button previous;
     private Button next;
     private int pageNumber;
+    private String currentURL;
 
 
     @Override
@@ -51,10 +53,8 @@ public class MainActivity extends Activity implements DownloadResultReceiver.Rec
                     pageNumber = 1;
                     StringBuilder builder = new StringBuilder().append(defaultURL).append(search.getText());
                     searchURL = builder.toString();
-                    Log.v("LOG URL", searchURL);
-                    intent.putExtra("url", searchURL);
-                    intent.putExtra("receiver", mReceiver);
-                    startService(intent);
+                    currentURL = searchURL;
+                    callIntent();
                     return true;
                 }
                 return false;
@@ -64,13 +64,11 @@ public class MainActivity extends Activity implements DownloadResultReceiver.Rec
         previous.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (pageNumber>1){
+                if (pageNumber > 1) {
                     pageNumber--;
                     StringBuilder builder = new StringBuilder().append(searchURL).append(page).append(pageNumber);
-                    Log.v("LOG URL", builder.toString());
-                    intent.putExtra("url", builder.toString());
-                    intent.putExtra("receiver", mReceiver);
-                    startService(intent);
+                    currentURL = builder.toString();
+                    callIntent();
                 }
 
             }
@@ -79,18 +77,37 @@ public class MainActivity extends Activity implements DownloadResultReceiver.Rec
         next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    pageNumber++;
-                    StringBuilder builder = new StringBuilder().append(searchURL).append(page).append(pageNumber);
-                    Log.v("LOG URL", builder.toString());
-                    intent.putExtra("url", builder.toString());
-                    intent.putExtra("receiver", mReceiver);
-                    startService(intent);
+                pageNumber++;
+                StringBuilder builder = new StringBuilder().append(searchURL).append(page).append(pageNumber);
+                currentURL = builder.toString();
+                callIntent();
             }
         });
 
 
     }
 
+    public void callIntent(){
+        Log.v("LOG URL", currentURL);
+        intent.putExtra("url", currentURL);
+        intent.putExtra("receiver", mReceiver);
+        startService(intent);
+    }
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        switch (newConfig.orientation){
+            case Configuration.ORIENTATION_LANDSCAPE:{
+                callIntent();
+            }
+            case Configuration.ORIENTATION_PORTRAIT:{
+                callIntent();
+            }
+
+
+        }
+
+    }
 
     @Override
     public void onReceiveResult(int resultCode, Bundle resultData) {
