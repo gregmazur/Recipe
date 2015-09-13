@@ -1,139 +1,113 @@
 package home.recipe;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
-import android.os.AsyncTask;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
-import android.widget.AbsListView;
+import android.view.Window;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
-import java.util.HashMap;
 
-import home.recipe.rest.JSONParser;
+import home.recipe.entity.Recipe;
+import home.recipe.service.DownloadResultReceiver;
+import home.recipe.service.DownloadService;
 
 
-public class MainActivity extends Activity {
-    private JSONObject jsonobject;
-    private JSONArray jsonarray;
-    private ListView listview;
-    private ListViewAdapter adapter;
-    private ProgressDialog mProgressDialog;
-    private ArrayList<HashMap<String, String>> arraylist;
-    private boolean loadingMore = false;
-
+public class MainActivity extends Activity implements DownloadResultReceiver.Receiver {
+    private ListView listView = null;
+    private ListViewAdapter arrayAdapter = null;
+    private DownloadResultReceiver mReceiver;
+    private final String defaultURL = "http://food2fork.com/api/search?key=4416dc74c59eb93a2a5c2f0b581e44cd&q=";
+    private final String page = "&page=";
+    private String searchURL = "";
     private EditText search;
-
-    //URL to get JSON Array
-    private static String url = "http://food2fork.com/api/search?key=4416dc74c59eb93a2a5c2f0b581e44cd&q=";
-
-    //JSON Node Names
-     static final String RECIPES_TAG = "recipes";
-     static final String TITLE_TAG = "title";
-     static final String PUBLISHER_URL_TAG = "publisher_url";
-     static final String IMAGE_URL_TAG = "image_url";
-     static final String F2F_URL_TAG = "f2f_url";
+    private Intent intent;
+    private Button previous;
+    private Button next;
+    private int pageNumber;
 
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Get the view from listview_main.xml
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.main);
-        addKeyListener();
-
-
-    }
-    public void addKeyListener() {
-
-        // get edittext component
+        listView = (ListView) findViewById(R.id.listview);
+        mReceiver = new DownloadResultReceiver(new Handler());
+        mReceiver.setReceiver(this);
+        intent = new Intent(Intent.ACTION_SYNC, null, this, DownloadService.class);
         search = (EditText) findViewById(R.id.search);
-
-        // add a keylistener to keep track user input
         search.setOnKeyListener(new View.OnKeyListener() {
             public boolean onKey(View v, int keyCode, KeyEvent event) {
-
-                // if keydown and "enter" is pressed
                 if ((event.getAction() == KeyEvent.ACTION_DOWN)
                         && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    StringBuilder builder = new StringBuilder().append(url).append(search.getText());
-                    url = builder.toString();
-                    Log.v("LOG URL",url);
-                    new DownloadJSON().execute();
+                    pageNumber = 1;
+                    StringBuilder builder = new StringBuilder().append(defaultURL).append(search.getText());
+                    searchURL = builder.toString();
+                    Log.v("LOG URL", searchURL);
+                    intent.putExtra("url", searchURL);
+                    intent.putExtra("receiver", mReceiver);
+                    startService(intent);
                     return true;
-
                 }
-
                 return false;
             }
         });
+        previous = (Button) findViewById(R.id.previous_btn);
+        previous.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (pageNumber>1){
+                    pageNumber--;
+                    StringBuilder builder = new StringBuilder().append(searchURL).append(page).append(pageNumber);
+                    Log.v("LOG URL", builder.toString());
+                    intent.putExtra("url", builder.toString());
+                    intent.putExtra("receiver", mReceiver);
+                    startService(intent);
+                }
+
+            }
+        });
+        next = (Button) findViewById(R.id.next_btn);
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                    pageNumber++;
+                    StringBuilder builder = new StringBuilder().append(searchURL).append(page).append(pageNumber);
+                    Log.v("LOG URL", builder.toString());
+                    intent.putExtra("url", builder.toString());
+                    intent.putExtra("receiver", mReceiver);
+                    startService(intent);
+            }
+        });
+
+
     }
 
-    // DownloadJSON AsyncTask
-    private class DownloadJSON extends AsyncTask<Void, Void, Void> {
 
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            // Create a progressdialog
-            mProgressDialog = new ProgressDialog(MainActivity.this);
-            // Set progressdialog title
-            mProgressDialog.setTitle("getting the recipes");
-            // Set progressdialog message
-            mProgressDialog.setMessage("Loading...");
-            mProgressDialog.setIndeterminate(false);
-            // Show progressdialog
-            mProgressDialog.show();
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            // Create an array
-            arraylist = new ArrayList<HashMap<String, String>>();
-            // Retrieve JSON Objects from the given URL address
-            jsonobject = JSONParser.getJSONFromUrl(url);
-
-            try {
-                // Locate the array name in JSON
-                jsonarray = jsonobject.getJSONArray(RECIPES_TAG);
-
-                for (int i = 0; i < jsonarray.length(); i++) {
-                    HashMap<String, String> map = new HashMap<String, String>();
-                    jsonobject = jsonarray.getJSONObject(i);
-                    // Retrive JSON Objects
-                    map.put(F2F_URL_TAG,jsonobject.getString(F2F_URL_TAG));
-                    map.put(TITLE_TAG, jsonobject.getString(TITLE_TAG));
-                    map.put(PUBLISHER_URL_TAG, jsonobject.getString(PUBLISHER_URL_TAG));
-                    map.put(IMAGE_URL_TAG, jsonobject.getString(IMAGE_URL_TAG));
-                    // Set the JSON Objects into the array
-                    arraylist.add(map);
-                }
-            } catch (JSONException e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void args) {
-            // Locate the listview in listview_main.xml
-            listview = (ListView) findViewById(R.id.listview);
-            // Pass the results into ListViewAdapter.java
-            adapter = new ListViewAdapter(MainActivity.this, arraylist);
-            // Set the adapter to the ListView
-            listview.setAdapter(adapter);
-            // Close the progressdialog
-            mProgressDialog.dismiss();
+    @Override
+    public void onReceiveResult(int resultCode, Bundle resultData) {
+        switch (resultCode) {
+            case DownloadService.STATUS_RUNNING:
+                setProgressBarIndeterminateVisibility(true);
+                break;
+            case DownloadService.STATUS_FINISHED:
+                setProgressBarIndeterminateVisibility(false);
+                ArrayList<Recipe> results = resultData.getParcelableArrayList("result");
+                arrayAdapter = new ListViewAdapter(MainActivity.this, results);
+                listView.setAdapter(arrayAdapter);
+                break;
+            case DownloadService.STATUS_ERROR:
+                String error = resultData.getString(Intent.EXTRA_TEXT);
+                Toast.makeText(this, error, Toast.LENGTH_LONG).show();
+                break;
         }
     }
 }

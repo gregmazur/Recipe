@@ -1,4 +1,4 @@
-package home.recipe.rest;
+package home.recipe.cache;
 
 /**
  * Created by greg on 12.09.15.

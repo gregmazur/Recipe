@@ -1,4 +1,4 @@
-package home.recipe.rest;
+package home.recipe.cache;
 
 /**
  * Created by greg on 12.09.15.
@@ -24,8 +24,6 @@ import android.graphics.BitmapFactory;
 import android.widget.ImageView;
 
 import home.recipe.R;
-import home.recipe.cache.FileCache;
-import home.recipe.cache.MemoryCache;
 
 public class ImageLoader {
 

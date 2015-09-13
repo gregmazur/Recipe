@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebView;
 
+import home.recipe.entity.Recipe;
+
 
 public class SingleItemActivity extends Activity {
 
@@ -18,7 +20,8 @@ public class SingleItemActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.singleitemview);
         Intent intent = getIntent();
-        String url = intent.getStringExtra(MainActivity.F2F_URL_TAG);
+        String url = intent.getStringExtra("url");
+        Log.v("SingleItemActivity",url);
         mWebView = (WebView) findViewById(R.id.webview);
         mWebView.getSettings().setJavaScriptEnabled(true);
         mWebView.loadUrl(url);

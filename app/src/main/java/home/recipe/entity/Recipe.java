@@ -1,11 +1,14 @@
 package home.recipe.entity;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.io.Serializable;
 
 /**
  * Created by greg on 12.09.15.
  */
-public class Recipe implements Serializable {
+public class Recipe implements Parcelable {
     private long id;
     private float rank;
     private String publisherName;
@@ -16,6 +19,16 @@ public class Recipe implements Serializable {
     private String publisher_url;
 
     public Recipe() {
+    }
+    private Recipe(Parcel in){
+        long id = in.readLong();
+        float rank = in.readFloat();
+         String publisherName = in.readString();
+         String f2f_url = in.readString();
+         String title = in.readString();
+         String source_url = in.readString();
+         String image_url = in.readString();
+         String publisher_url = in.readString();
     }
 
     public String getF2f_url() {
@@ -82,12 +95,31 @@ public class Recipe implements Serializable {
         this.title = title;
     }
 
+    public static final Parcelable.Creator<Recipe> CREATOR
+            = new Parcelable.Creator<Recipe>() {
+        public Recipe createFromParcel(Parcel in) {
+            return new Recipe(in);
+        }
+
+        public Recipe[] newArray(int size) {
+            return new Recipe[size];
+        }
+    };
+
     @Override
-    public String toString() {
-        return "Recipe{" +
-                "title='" + title + '\'' +
-                ", id=" + id +
-                ", rank=" + rank +
-                '}';
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeLong(id);
+        dest.writeFloat(rank);
+        dest.writeString(title);
+        dest.writeString(publisher_url);
+        dest.writeString(publisherName);
+        dest.writeString(f2f_url);
+        dest.writeString(image_url);
+        dest.writeString(source_url);
     }
 }
